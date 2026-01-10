@@ -7,7 +7,7 @@ def send_email(content):
     password = os.getenv("SMTP_PASS")
     receiver = "suvashis.padhi@gmail.com"
     print("DEBUG EMAIL_USER:", sender)
-    print("DEBUG EMAIL_PASS EXISTS:", password is not None
+    print("DEBUG EMAIL_PASS EXISTS:", password is not None)
 
     msg = MIMEText(content, "plain")
     msg["Subject"] = "🇮🇳 Daily AI Advancements in India"
