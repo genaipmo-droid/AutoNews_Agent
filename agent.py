@@ -20,7 +20,8 @@ def run_autonews_agent():
         tools=tools,
         llm=llm,
         agent="zero-shot-react-description",
-        verbose=False
+        verbose=False,
+        handle_parsing_errors=True
     )
 
     prompt = PromptTemplate(
