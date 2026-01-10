@@ -25,25 +25,53 @@ def run_autonews_agent():
     )
 
     prompt = PromptTemplate(
-        input_variables=["question"],
-        template="""
-Search for AI advancements in India.
+    input_variables=["question"],
+    template="""
+You are a professional news analyst.
+
+Task:
+Find the TOP 3 most important AI-related news items in India from the last 14 days.
+
+Sources can include:
+- Government announcements
+- Indian startups
+- Indian research institutes
+- Indian offices of global tech companies
+
+STRICT OUTPUT FORMAT (must follow exactly):
+
+1) Headline: <news headline>
+   Source: <full clickable URL>
+   Key Points:
+   - Point 1
+   - Point 2
+   Impact:
+   - 1–2 lines on why this matters for India
+
+2) Headline: ...
+   Source: ...
+   Key Points:
+   - ...
+   - ...
+   Impact: ...
+
+3) Headline: ...
+   Source: ...
+   Key Points:
+   - ...
+   - ...
+   Impact: ...
 
 Rules:
-- News must be within last 14 days
-- Include government, startups, MNCs, or research
-- Pick TOP 3 impactful items
-
-For each news provide:
-• Headline
-• Two key points
-• Impact
-• Full source URL
+- Every item MUST contain a valid URL.
+- Do NOT invent sources.
+- Use the search tool to fetch real links.
 
 Question:
 {question}
 """
-    )
+)
+
 
     question = "Latest AI advancements in India"
 
