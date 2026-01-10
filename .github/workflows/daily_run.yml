@@ -23,6 +23,7 @@ jobs:
       - name: Run AutoNews Agent
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_API_BASE: ${{ secrets.OPENAI_API_BASE }}
           SERPAPI_API_KEY: ${{ secrets.SERPAPI_API_KEY }}
           EMAIL_USER: ${{ secrets.EMAIL_USER }}
           EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
