@@ -2,80 +2,49 @@ import os
 from langchain_openai import ChatOpenAI
 from langchain.agents import initialize_agent, load_tools
 from langchain.prompts import PromptTemplate
+from langchain_community.utilities import SerpAPIWrapper
 
 def run_autonews_agent():
+    # Step 1: Use SerpAPI directly (structured results)
+    search = SerpAPIWrapper(params={
+        "q": "AI advancements in India government startup MNC site:thehindu.com OR site:livemint.com OR site:economictimes.com",
+        "num": 10,
+        "recency": 14
+    })
+
+    results = search.results()
+
+    # Extract top organic results safely
+    articles = results.get("organic_results", [])[:5]
+
+    # Build clean source list
+    sources_text = ""
+    for i, item in enumerate(articles[:3], 1):
+        sources_text += f"{i}. {item['title']}\nURL: {item['link']}\n\n"
+
+    # Step 2: Now summarize using LLM
     llm = ChatOpenAI(
         temperature=0.2,
         model="gpt-3.5-turbo",
-        base_url="https://openai.vocareum.com/v1",
+        base_url=os.getenv("OPENAI_API_BASE"),
         api_key=os.getenv("OPENAI_API_KEY")
     )
 
-    tools = load_tools(
-        ["serpapi"],
-        llm=llm
-    )
+    prompt = f"""
+You are a professional analyst.
 
-    agent = initialize_agent(
-        tools=tools,
-        llm=llm,
-        agent="zero-shot-react-description",
-        verbose=False,
-        handle_parsing_errors=True
-    )
+Summarize the following real news articles into a clean report.
 
-    prompt = PromptTemplate(
-    input_variables=["question"],
-    template="""
-You are a professional news analyst.
+For each item provide:
+- Headline
+- 2 Key Points
+- Impact on India
+- Keep the same URL
 
-Task:
-Find the TOP 3 most important AI-related news items in India from the last 14 days.
-
-Sources can include:
-- Government announcements
-- Indian startups
-- Indian research institutes
-- Indian offices of global tech companies
-
-STRICT OUTPUT FORMAT (must follow exactly):
-
-1) Headline: <news headline>
-   Source: <full clickable URL>
-   Key Points:
-   - Point 1
-   - Point 2
-   Impact:
-   - 1–2 lines on why this matters for India
-
-2) Headline: ...
-   Source: ...
-   Key Points:
-   - ...
-   - ...
-   Impact: ...
-
-3) Headline: ...
-   Source: ...
-   Key Points:
-   - ...
-   - ...
-   Impact: ...
-
-Rules:
-- Every item MUST contain a valid URL.
-- Do NOT invent sources.
-- Use the search tool to fetch real links.
-
-Question:
-{question}
+Articles:
+{sources_text}
 """
-)
 
+    response = llm.invoke(prompt)
 
-    question = "Latest AI advancements in India"
-
-    final_prompt = prompt.format(question=question)
-    result = agent.run(final_prompt)
-
-    return result
+    return response.content
