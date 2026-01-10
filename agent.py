@@ -5,19 +5,18 @@ from langchain.prompts import PromptTemplate
 from langchain_community.utilities import SerpAPIWrapper
 
 def run_autonews_agent():
-    # Step 1: Use SerpAPI directly (structured results)
-    search = SerpAPIWrapper(params={
-        "q": "AI advancements in India government startup MNC site:thehindu.com OR site:livemint.com OR site:economictimes.com",
-        "num": 10,
-        "recency": 14
-    })
+    search = SerpAPIWrapper()
 
-    results = search.results()
+    query = """
+    Latest AI advancements in India government startup research MNC
+    site:thehindu.com OR site:livemint.com OR site:economictimes.com
+    OR site:business-standard.com OR site:pib.gov.in
+    """
 
-    # Extract top organic results safely
+    results = search.results(query)
+
     articles = results.get("organic_results", [])[:5]
 
-    # Build clean source list
     sources_text = ""
     for i, item in enumerate(articles[:3], 1):
         sources_text += f"{i}. {item['title']}\nURL: {item['link']}\n\n"
