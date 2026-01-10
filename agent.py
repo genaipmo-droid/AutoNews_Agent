@@ -1,12 +1,17 @@
 from langchain_openai import ChatOpenAI
 from langchain.agents import initialize_agent, load_tools
 from langchain.prompts import PromptTemplate
+import os
+from langchain_openai import ChatOpenAI
 
 def run_autonews_agent():
-    llm = ChatOpenAI(
-        temperature=0.2,
-        model="gpt-3.5-turbo"
-    )
+
+llm = ChatOpenAI(
+    temperature=0.2,
+    model="gpt-3.5-turbo",
+    base_url="https://openai.vocareum.com/v1",
+    api_key=os.getenv("OPENAI_API_KEY")
+)
 
     tools = load_tools(
         ["serpapi"],
