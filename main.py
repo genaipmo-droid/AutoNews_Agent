@@ -178,13 +178,13 @@ You are a professional editor creating a polished email newsletter.
 Format the output in clean HTML using this structure for each item:
 
 <div style="margin-bottom:20px;">
-  <h3>1. Headline here</h3>
+  <h3 style="color:#1a73e8;">1. Headline here</h3>
   <ul>
     <li>Key point one</li>
     <li>Key point two</li>
   </ul>
   <p><b>Impact:</b> short impact sentence</p>
-  <p>🔗 <a href="URL_HERE">Read full article</a></p>
+  <p>🔗 <a href="URL_HERE" style="color:#8e44ad; text-decoration:none;">Read full article</a></p>
 </div>
 
 Rules:
