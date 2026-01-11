@@ -172,26 +172,48 @@ def run_autonews():
         api_key=os.getenv("OPENAI_API_KEY")
     )
 
-    prompt = f"""
+prompt = f"""
 You are a professional editor creating a polished email newsletter.
 
-Format the output in clean HTML using this structure for each item:
+Output a complete HTML email body using email-safe table layout.
 
-<div style="margin-bottom:20px;">
-  <h3 style="color:#1a73e8;">1. Headline here</h3>
-  <ul>
-    <li>Key point one</li>
-    <li>Key point two</li>
-  </ul>
-  <p><b>Impact:</b> short impact sentence</p>
-  <p>🔗 <a href="URL_HERE" style="color:#8e44ad; text-decoration:none;">Read full article</a></p>
-</div>
+Use this structure:
+
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f6fb; padding:20px;">
+  <tr>
+    <td align="center">
+      <table width="600" cellpadding="0" cellspacing="0">
+
+        <!-- Repeat this card block for each article -->
+        <tr>
+          <td style="padding-bottom:15px;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff; border:1px solid #e6e9f0; border-radius:12px;">
+              <tr>
+                <td style="padding:18px;">
+                  <h3 style="color:#1a73e8; margin:0 0 10px 0;">1. Headline here</h3>
+                  <ul style="padding-left:18px; margin:0 0 10px 0;">
+                    <li>Key point one</li>
+                    <li>Key point two</li>
+                  </ul>
+                  <p style="margin:0 0 10px 0;"><b>Impact:</b> short impact sentence</p>
+                  <p style="margin:0;">🔗 <a href="URL_HERE" style="color:#8e44ad; text-decoration:none;">Read full article</a></p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>
 
 Rules:
 - Keep headlines concise
 - Make key points crisp
 - Use the exact same URLs
-- Do NOT include markdown, only HTML body content
+- Do NOT include markdown
+- Output only HTML
 
 Articles:
 {sources_text}
