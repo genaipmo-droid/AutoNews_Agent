@@ -73,7 +73,7 @@ def run_autonews():
 
     # Fallback if nothing fresh found
     if len(fresh_articles) < 3:
-    fresh_articles = organic[:3]
+       fresh_articles = organic[:3]
 
     # 3. Build trusted input for LLM
     sources_text = ""
