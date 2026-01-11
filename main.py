@@ -133,19 +133,29 @@ def run_autonews():
     )
 
     prompt = f"""
-You are a professional AI news editor.
+You are a professional editor creating a polished email newsletter.
 
-Summarize the following real news articles into a clean daily briefing.
+Format the output in clean HTML using this structure for each item:
 
-For each item provide:
-- Headline
-- 2 concise key points
-- Impact on India (1–2 lines)
-- Keep the exact same URL
+<div style="margin-bottom:20px;">
+  <h3>1. Headline here</h3>
+  <ul>
+    <li>Key point one</li>
+    <li>Key point two</li>
+  </ul>
+  <p><b>Impact:</b> short impact sentence</p>
+  <p>🔗 <a href="URL_HERE">Read full article</a></p>
+</div>
 
+Rules:
+- Keep headlines concise
+- Make key points crisp
+- Use the exact same URLs
+- Do NOT include markdown, only HTML body content
 Articles:
 {sources_text}
 """
+
 
     response = llm.invoke(prompt)
     return response.content
