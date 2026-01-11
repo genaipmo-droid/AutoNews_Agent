@@ -8,7 +8,7 @@ from email_sender import send_email
 
 
 # -----------------------------
-# Strong AI keywords (must appear in TITLE)
+# Strong AI keywords
 # -----------------------------
 AI_KEYWORDS = [
     "ai ", " ai", "artificial intelligence",
@@ -19,6 +19,17 @@ AI_KEYWORDS = [
     "ai model", "ai startup", "ai funding",
     "ai research", "ai mission",
     "nvidia ai", "ai chip"
+]
+
+# -----------------------------
+# India relevance keywords
+# -----------------------------
+INDIA_KEYWORDS = [
+    "india", "indian", "bharat",
+    "delhi", "mumbai", "bengaluru", "bangalore",
+    "hyderabad", "chennai", "pune", "kolkata",
+    "startup india", "meity", "government of india",
+    "ministry of electronics", "it ministry"
 ]
 
 
@@ -35,16 +46,21 @@ def is_ai_relevant(title, snippet):
     return keyword_hits >= 2
 
 
+def is_india_relevant(title, snippet):
+    text = (title + " " + snippet).lower()
+    return any(word in text for word in INDIA_KEYWORDS)
+
+
 # -----------------------------
-# Recency logic (≤14 days preferred, tolerant)
+# Strict recency logic
 # -----------------------------
-def is_recent(text, max_days=14):
+def is_recent(text, max_days=7):
     if not text:
-        return True  # Don't reject if date missing
+        return False  # Missing date = reject (quality control)
 
     text = text.lower()
 
-    # "2 days ago", "1 week ago"
+    # Relative dates: "2 days ago"
     match = re.search(r"(\d+)\s+(minute|hour|day|week)s?\s+ago", text)
     if match:
         value = int(match.group(1))
@@ -57,16 +73,21 @@ def is_recent(text, max_days=14):
         if unit == "week":
             return value * 7 <= max_days
 
-    # Absolute dates: "Jan 5, 2026" / "January 5, 2026"
+    # Absolute dates: "Jan 5, 2026"
     for fmt in ("%b %d, %Y", "%B %d, %Y"):
         try:
             dt = datetime.strptime(text.strip(), fmt)
+
+            # Block future dates
+            if dt > datetime.now():
+                return False
+
             return datetime.now() - dt <= timedelta(days=max_days)
         except:
             pass
 
-    # If unsure, keep it (avoid empty results)
-    return True
+    # If date can't be parsed → reject for quality
+    return False
 
 
 # -----------------------------
@@ -90,7 +111,7 @@ def run_autonews():
     organic = results.get("organic_results", [])
 
     # -----------------------------
-    # Filter by AI relevance + recency
+    # Strict filtering
     # -----------------------------
     selected = []
 
@@ -99,31 +120,45 @@ def run_autonews():
         snippet = item.get("snippet", "")
         date_text = item.get("date", "") or snippet
 
-        if is_ai_relevant(title, snippet) and is_recent(date_text):
+        if (
+            is_ai_relevant(title, snippet)
+            and is_india_relevant(title, snippet)
+            and is_recent(date_text)
+        ):
             selected.append(item)
 
-    # Fallback: ensure we always get 3 items
+    # -----------------------------
+    # Smart fallback (still enforces India + AI)
+    # -----------------------------
     if len(selected) < 3:
         for item in organic:
-            if item not in selected:
+            title = item.get("title", "")
+            snippet = item.get("snippet", "")
+
+            if (
+                is_ai_relevant(title, snippet)
+                and is_india_relevant(title, snippet)
+                and item not in selected
+            ):
                 selected.append(item)
+
             if len(selected) >= 3:
                 break
 
     selected = selected[:3]
 
     if not selected:
-        return "No AI-related news found today."
+        return "<p>No high-quality India AI news found today.</p>"
 
     # -----------------------------
-    # Prepare trusted URLs for LLM
+    # Prepare URLs for LLM
     # -----------------------------
     sources_text = ""
     for i, item in enumerate(selected, 1):
         sources_text += f"{i}. {item['title']}\nURL: {item['link']}\n\n"
 
     # -----------------------------
-    # LLM summarization only
+    # LLM formatting only
     # -----------------------------
     llm = ChatOpenAI(
         temperature=0.2,
@@ -152,17 +187,17 @@ Rules:
 - Make key points crisp
 - Use the exact same URLs
 - Do NOT include markdown, only HTML body content
+
 Articles:
 {sources_text}
 """
-
 
     response = llm.invoke(prompt)
     return response.content
 
 
 # -----------------------------
-# Entry point (email still works)
+# Entry point
 # -----------------------------
 if __name__ == "__main__":
     final_news = run_autonews()
