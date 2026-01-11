@@ -52,15 +52,15 @@ def is_india_relevant(title, snippet):
 
 
 # -----------------------------
-# Strict recency logic
+# Strict recency logic (≤ 7 days only)
 # -----------------------------
 def is_recent(text, max_days=7):
     if not text:
-        return False  # Missing date = reject (quality control)
+        return False  # Strict: no date = reject
 
     text = text.lower()
 
-    # Relative dates: "2 days ago"
+    # Relative dates: "2 days ago", "5 hours ago"
     match = re.search(r"(\d+)\s+(minute|hour|day|week)s?\s+ago", text)
     if match:
         value = int(match.group(1))
@@ -73,20 +73,23 @@ def is_recent(text, max_days=7):
         if unit == "week":
             return value * 7 <= max_days
 
-    # Absolute dates: "Jan 5, 2026"
+        return False
+
+    # Absolute dates: "Jan 5, 2026" / "January 5, 2026"
     for fmt in ("%b %d, %Y", "%B %d, %Y"):
         try:
             dt = datetime.strptime(text.strip(), fmt)
 
-            # Block future dates
+            # Reject future dates
             if dt > datetime.now():
                 return False
 
-            return datetime.now() - dt <= timedelta(days=max_days)
+            # Strict 7-day window
+            return (datetime.now() - dt) <= timedelta(days=max_days)
         except:
             pass
 
-    # If date can't be parsed → reject for quality
+    # If format not recognized → reject
     return False
 
 
@@ -111,7 +114,7 @@ def run_autonews():
     organic = results.get("organic_results", [])
 
     # -----------------------------
-    # Strict filtering
+    # Strict filtering (no compromises)
     # -----------------------------
     selected = []
 
@@ -128,16 +131,18 @@ def run_autonews():
             selected.append(item)
 
     # -----------------------------
-    # Smart fallback (still enforces India + AI)
+    # Strict fallback (still enforces all rules)
     # -----------------------------
     if len(selected) < 3:
         for item in organic:
             title = item.get("title", "")
             snippet = item.get("snippet", "")
+            date_text = item.get("date", "") or snippet
 
             if (
                 is_ai_relevant(title, snippet)
                 and is_india_relevant(title, snippet)
+                and is_recent(date_text)
                 and item not in selected
             ):
                 selected.append(item)
@@ -148,7 +153,7 @@ def run_autonews():
     selected = selected[:3]
 
     if not selected:
-        return "<p>No high-quality India AI news found today.</p>"
+        return "<p>No India-specific AI articles found from the last 7 days.</p>"
 
     # -----------------------------
     # Prepare URLs for LLM
