@@ -12,21 +12,33 @@ from email_sender import send_email
 # -----------------------------
 def is_recent(text, max_days=14):
     if not text:
-        return False
+        return True  # Important: don't reject if date is missing
 
     text = text.lower()
 
-    # Matches: "2 days ago", "5 hours ago"
-    if re.search(r"\b\d+\s+(day|hour|minute)s?\s+ago\b", text):
-        return True
+    # Handles: "2 days ago", "5 hours ago", "1 week ago"
+    match = re.search(r"(\d+)\s+(minute|hour|day|week)s?\s+ago", text)
+    if match:
+        value = int(match.group(1))
+        unit = match.group(2)
 
-    # Matches: "Jan 05, 2026"
-    try:
-        dt = datetime.strptime(text.strip(), "%b %d, %Y")
-        return datetime.now() - dt <= timedelta(days=max_days)
-    except:
-        return False
+        if unit == "minute" or unit == "hour":
+            return True
+        if unit == "day":
+            return value <= max_days
+        if unit == "week":
+            return value * 7 <= max_days
 
+    # Handles: "Jan 05, 2026" and "January 5, 2026"
+    for fmt in ("%b %d, %Y", "%B %d, %Y"):
+        try:
+            dt = datetime.strptime(text.strip(), fmt)
+            return datetime.now() - dt <= timedelta(days=max_days)
+        except:
+            pass
+
+    # If we can't understand the date, keep the article instead of dropping it
+    return True
 
 # -----------------------------
 # Main pipeline
@@ -36,9 +48,14 @@ def run_autonews():
     search = SerpAPIWrapper()
 
     query = """
-    Latest AI advancements in India government startup research MNC
+    Latest AI news India government startup research MNC funding launch partnership
     site:thehindu.com OR site:livemint.com OR site:economictimes.com
     OR site:business-standard.com OR site:pib.gov.in OR site:indiatoday.in
+    OR site:indianexpress.com OR site:hindustantimes.com
+    OR site:timesofindia.indiatimes.com OR site:moneycontrol.com
+    OR site:analyticsindiamag.com OR site:inc42.com
+    OR site:yourstory.com OR site:techcircle.in
+    OR site:techcrunch.com/tag/india
     """
 
     results = search.results(query)
@@ -55,8 +72,8 @@ def run_autonews():
     fresh_articles = fresh_articles[:3]
 
     # Fallback if nothing fresh found
-    if not fresh_articles:
-        return "No sufficiently recent AI news found today."
+    if len(fresh_articles) < 3:
+    fresh_articles = organic[:3]
 
     # 3. Build trusted input for LLM
     sources_text = ""
